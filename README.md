@@ -1,110 +1,64 @@
-# 💹 FinSight AI — Intelligent Financial Risk & Insights Platform
+# FinSight AI
 
-> **An end-to-end AI/ML platform combining traditional ML, RAG, LLMs, and Agentic AI to assess credit risk, analyze financial documents, and generate actionable insights — built to production standards.**
+A financial risk and document intelligence platform. It combines a credit risk model trained on LendingClub data, a RAG pipeline over SEC 10-K filings, and an LLM agent that can call both as tools to answer analyst questions.
 
-[![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-green.svg)](https://fastapi.tiangolo.com/)
-[![License](https://img.shields.io/badge/license-MIT-yellow.svg)](LICENSE)
+> Built as a learning project. Not investment advice. The credit model is trained on a public dataset and the RAG corpus is a small set of filings — useful for exploring the patterns, not for production lending decisions.
 
 ---
 
-## 🎯 Why This Project Stands Out
+## What it does
 
-This is **not** a toy notebook. FinSight AI is engineered like a real fintech product and exercises the full modern AI/ML stack that large companies (Goldman, JPMC, American Express, Razorpay, Stripe, fintech unicorns) actually hire for:
-
-| Layer | What it shows recruiters |
-|---|---|
-| **Traditional ML** | Feature engineering, XGBoost, Random Forest, LightGBM, calibration, SHAP explainability — the bread & butter of risk modeling |
-| **RAG Pipeline** | Vector DB (FAISS/Chroma), hybrid search (BM25 + dense), re-ranking, chunking strategies on 10-K reports |
-| **LLM Orchestration** | Function-calling, structured outputs, prompt engineering, evaluation with LLM-as-judge |
-| **Agentic AI** | A multi-tool agent that picks between the credit model, the RAG index, and live calculators to answer analyst questions |
-| **MLOps** | MLflow tracking, Docker, FastAPI serving, model monitoring, drift detection, CI-ready tests |
-| **Software Engineering** | Clean modular code, configs via Hydra/YAML, typed Python, unit tests, reproducibility |
+- **Credit risk scoring** — predicts default probability for a loan applicant using an XGBoost + Random Forest ensemble with engineered features (debt-to-income, credit utilization, income-to-loan ratio, credit history length)
+- **Document Q&A over 10-K filings** — natural-language questions answered by an LLM grounded in retrieved passages from SEC filings, with citations
+- **Analyst agent** — an LLM agent that picks between the credit model, the RAG index, and a financial ratio calculator to answer multi-step questions like *"Assess credit risk for this applicant and contextualize it with their employer's latest filings"*
+- **REST API** — everything exposed through FastAPI with OpenAPI docs
 
 ---
 
-## 🏗️ Architecture
+## Tech stack
+
+**ML:** scikit-learn, XGBoost, SHAP, MLflow, SMOTE, isotonic calibration
+**RAG:** sentence-transformers, FAISS, OpenAI / Anthropic APIs
+**API:** FastAPI, Pydantic, Uvicorn
+**Infra:** Docker, docker-compose
+
+The credit model and the RAG pipeline are separate modules, each with its own training/build step. The agent layer sits on top and calls them through a tools interface.
+
+---
+
+## Architecture
 
 ```
-┌──────────────────────────────────────────────────────────────────┐
-│                      User / Analyst                              │
-│   "Is Reliance a credit risk given their latest 10-K?"          │
-└─────────────────────────────┬────────────────────────────────────┘
-                              │
-                    ┌─────────▼─────────┐
-                    │   FastAPI Layer   │
-                    └─────────┬─────────┘
-                              │
-        ┌─────────────────────┼─────────────────────┐
-        │                     │                     │
-┌───────▼────────┐  ┌─────────▼────────┐  ┌────────▼────────┐
-│  LLM Agent     │  │   RAG Pipeline   │  │  Credit Risk    │
-│  (Orchestrator)│  │  (Financial      │  │  Model          │
-│                │  │   Documents)     │  │  (XGBoost+RF)   │
-└───────┬────────┘  └─────────┬────────┘  └────────┬────────┘
-        │                     │                     │
-        │           ┌─────────▼────────┐  ┌────────▼────────┐
-        │           │  Vector Store    │  │  Feature Store  │
-        │           │  (FAISS/Chroma)  │  │  + SHAP         │
-        │           └──────────────────┘  └─────────────────┘
+                User / Analyst query
+                        │
+                        ▼
+                  FastAPI layer
+                        │
+        ┌───────────────┼───────────────┐
+        │               │               │
+        ▼               ▼               ▼
+   LLM Agent       RAG Pipeline   Credit Risk Model
+  (orchestrator)   (10-K filings)  (XGBoost + RF)
+        │               │               │
+        │               ▼               ▼
+        │         FAISS Vector     SHAP / Features
+        │           Store
         │
-┌───────▼─────────────────────────────────────────────────────┐
-│  Tools: [predict_risk, search_filings, calculate_ratios,    │
-│         get_market_data, generate_report]                   │
-└─────────────────────────────────────────────────────────────┘
+        ▼
+  Tools: predict_risk, search_filings,
+         calculate_ratios, generate_report
 ```
 
 ---
 
-## 🚀 Key Features
-
-### 1. **Credit Risk Scoring Engine** (Traditional ML)
-- XGBoost + Random Forest + Logistic Regression stacked ensemble
-- 35+ engineered features (debt-to-income, utilization ratios, behavioral signals)
-- SHAP-based explainability per prediction
-- Probability calibration with isotonic regression
-- Class imbalance handled via SMOTE + scale_pos_weight
-
-### 2. **Financial Document Intelligence** (RAG)
-- Ingests 10-K, 10-Q, earnings call transcripts, annual reports (PDFs)
-- Hierarchical chunking (semantic + recursive)
-- Hybrid retrieval: BM25 (lexical) + dense embeddings (semantic) + Reciprocal Rank Fusion
-- Cross-encoder re-ranking for top-k precision
-- Citations with page numbers and source tracking
-
-### 3. **LLM-Powered Analyst Agent**
-- Tool-using agent (function calling) over: risk model, RAG index, financial calculators
-- Multi-step reasoning with intermediate state
-- Structured output (Pydantic) for downstream systems
-- Hallucination guardrails via retrieval grounding
-
-### 4. **Production-Ready API**
-- FastAPI endpoints with OpenAPI docs
-- Async batch + streaming responses
-- Rate limiting, request validation, error handling
-- Dockerized for one-command deploy
-
-### 5. **MLOps & Evaluation**
-- MLflow experiment tracking
-- LLM-as-judge eval for RAG (faithfulness, relevance, groundedness)
-- RAGAS-style metrics
-- Data drift monitoring (PSI, KS test)
-- Model card auto-generation
-
----
-
-## 📁 Project Structure
+## Project structure
 
 ```
 finsight-ai/
 ├── data/
-│   ├── raw/                  # Raw PDFs, CSVs (e.g., LendingClub, 10-K filings)
-│   ├── processed/            # Cleaned, feature-engineered data
-│   └── synthetic/            # Generated test data
-├── notebooks/
-│   ├── 01_eda.ipynb          # Exploratory analysis
-│   ├── 02_feature_eng.ipynb  # Feature engineering & selection
-│   └── 03_rag_evaluation.ipynb
+│   ├── raw/                  # LendingClub CSV, 10-K PDFs
+│   ├── processed/            # Cleaned, feature-engineered
+│   └── synthetic/
 ├── src/
 │   ├── traditional_ml/       # Credit risk model
 │   │   ├── data_pipeline.py
@@ -117,9 +71,8 @@ finsight-ai/
 │   │   ├── chunking.py
 │   │   ├── embeddings.py
 │   │   ├── retriever.py
-│   │   ├── reranker.py
 │   │   └── generator.py
-│   ├── agent/                # LLM agent orchestrator
+│   ├── agent/                # LLM agent
 │   │   ├── tools.py
 │   │   ├── agent.py
 │   │   └── prompts.py
@@ -128,54 +81,39 @@ finsight-ai/
 │   │   ├── schemas.py
 │   │   └── routes.py
 │   └── utils/
-│       ├── config.py
-│       ├── logger.py
-│       └── monitoring.py
 ├── configs/
 │   ├── model_config.yaml
 │   ├── rag_config.yaml
 │   └── agent_config.yaml
-├── tests/                    # pytest suite
+├── tests/
 ├── docker/
 │   ├── Dockerfile
 │   └── docker-compose.yml
-├── scripts/                  # CLI runners
-│   ├── train_model.sh
-│   ├── build_index.sh
-│   └── run_api.sh
-├── docs/
-│   └── ARCHITECTURE.md
 ├── artifacts/
-│   ├── models/               # Saved models
-│   ├── embeddings/           # FAISS indices
-│   └── reports/              # Generated reports
+│   ├── models/
+│   ├── embeddings/
+│   └── reports/
 ├── requirements.txt
-├── pyproject.toml
 └── README.md
 ```
 
 ---
 
-## ⚙️ Setup & Installation
+## Setup
 
-### Prerequisites
-- Python 3.10+
-- Docker (optional but recommended)
-- 8GB+ RAM
-- OpenAI/Anthropic API key (or local LLM via Ollama)
+Requires Python 3.10+, ~8 GB RAM, and an OpenAI or Anthropic API key (or a local LLM via Ollama).
 
-### 1. Clone & Install
 ```bash
-git clone https://github.com/<you>/finsight-ai.git
-cd finsight-ai
+git clone https://github.com/eshwarvanguri/FinSight-AI.git
+cd FinSight-AI
 python -m venv venv
-source venv/bin/activate    # Windows: venv\Scripts\activate
+source venv/bin/activate          # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 2. Environment Variables
-Create a `.env` file in the project root:
-```bash
+Create a `.env` in the project root:
+
+```
 OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
 MLFLOW_TRACKING_URI=./mlruns
@@ -184,7 +122,8 @@ LLM_MODEL=gpt-4o-mini
 LOG_LEVEL=INFO
 ```
 
-### 3. Download Sample Data
+Download sample data:
+
 ```bash
 python scripts/download_data.py --dataset lending_club
 python scripts/download_data.py --dataset sample_10k
@@ -192,33 +131,31 @@ python scripts/download_data.py --dataset sample_10k
 
 ---
 
-## 🏃 How to Run — Step by Step
+## Running it
 
-### **Step 1: Train the Credit Risk Model**
+### Train the credit risk model
 
 ```bash
 python -m src.traditional_ml.train \
     --config configs/model_config.yaml \
     --data data/raw/lending_club.csv \
     --output artifacts/models/credit_risk_v1.pkl \
-    --experiment-name credit-risk-baseline \
     --use-mlflow
 ```
 
-**Arguments:**
+Common flags:
+
 | Flag | Description | Default |
 |---|---|---|
 | `--config` | Path to YAML model config | `configs/model_config.yaml` |
 | `--data` | Path to training CSV | required |
-| `--output` | Where to save the trained model | `artifacts/models/model.pkl` |
+| `--output` | Where to save the model | `artifacts/models/model.pkl` |
 | `--model-type` | `xgboost` / `random_forest` / `ensemble` | `ensemble` |
 | `--use-mlflow` | Log to MLflow | `False` |
 | `--tune` | Run Optuna hyperparameter tuning | `False` |
-| `--n-trials` | Optuna trials if `--tune` | `50` |
+| `--n-trials` | Optuna trials | `50` |
 
----
-
-### **Step 2: Evaluate the Model**
+### Evaluate
 
 ```bash
 python -m src.traditional_ml.evaluate \
@@ -228,18 +165,7 @@ python -m src.traditional_ml.evaluate \
     --generate-shap
 ```
 
-**Arguments:**
-| Flag | Description | Default |
-|---|---|---|
-| `--model` | Trained model path | required |
-| `--test-data` | Held-out test set | required |
-| `--output` | Where to save metrics JSON | `eval.json` |
-| `--generate-shap` | Compute SHAP values + plots | `False` |
-| `--threshold` | Decision threshold | `0.5` |
-
----
-
-### **Step 3: Build the RAG Index from Financial Documents**
+### Build the RAG index
 
 ```bash
 python -m src.llm_rag.ingestion \
@@ -251,134 +177,87 @@ python -m src.llm_rag.ingestion \
     --vector-store faiss
 ```
 
-**Arguments:**
-| Flag | Description | Default |
-|---|---|---|
-| `--input-dir` | Folder of PDFs to ingest | required |
-| `--index-path` | Where to save the vector index | required |
-| `--chunk-size` | Tokens per chunk | `512` |
-| `--chunk-overlap` | Token overlap between chunks | `64` |
-| `--embedding-model` | HF embedding model | `BAAI/bge-small-en-v1.5` |
-| `--vector-store` | `faiss` / `chroma` | `faiss` |
-| `--use-semantic-chunking` | Use semantic chunker | `False` |
-
----
-
-### **Step 4: Query the RAG Pipeline (CLI)**
+### Query the RAG pipeline
 
 ```bash
 python -m src.llm_rag.generator \
-    --query "What were the main risk factors mentioned in the latest 10-K?" \
+    --query "What were the main risk factors in the latest 10-K?" \
     --index-path artifacts/embeddings/finsight_index \
     --top-k 5 \
-    --use-reranker \
     --llm-model gpt-4o-mini
 ```
 
----
-
-### **Step 5: Run the Full Agent**
+### Run the agent
 
 ```bash
 python -m src.agent.agent \
-    --query "Assess credit risk for applicant ID 12345 and contextualize with their employer's latest 10-K filings" \
+    --query "Assess credit risk for applicant 12345 and add context from their employer's latest filings" \
     --config configs/agent_config.yaml \
     --verbose
 ```
 
----
-
-### **Step 6: Launch the API Server**
+### Launch the API
 
 ```bash
-# Development
 uvicorn src.api.main:app --reload --host 0.0.0.0 --port 8000
-
-# Production
-uvicorn src.api.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
 Visit `http://localhost:8000/docs` for interactive Swagger UI.
 
-**Available endpoints:**
-- `POST /api/v1/predict` — Credit risk prediction
-- `POST /api/v1/rag/query` — Query the document index
-- `POST /api/v1/agent/chat` — Full agentic conversation
-- `GET /api/v1/health` — Health check
-- `GET /api/v1/metrics` — Prometheus-style metrics
+**Endpoints:**
 
----
+- `POST /api/v1/predict` — credit risk prediction
+- `POST /api/v1/rag/query` — query the document index
+- `POST /api/v1/agent/chat` — full agentic conversation
+- `GET /api/v1/health` — health check
 
-### **Step 7: Docker Deployment**
+### Docker
 
 ```bash
 docker-compose -f docker/docker-compose.yml up --build
 ```
 
-This spins up:
-- The FinSight API on port `8000`
-- MLflow UI on port `5000`
-- A Redis cache on port `6379`
+Spins up the API on `:8000`, MLflow on `:5000`, and Redis on `:6379`.
 
----
-
-### **Step 8: Run Tests**
+### Tests
 
 ```bash
-pytest tests/ -v --cov=src --cov-report=html
+pytest tests/ -v --cov=src
 ```
 
 ---
 
-## 📊 Sample Results (on LendingClub data)
+## Sample results
 
-| Model | ROC-AUC | PR-AUC | KS | Brier |
-|---|---|---|---|---|
-| Logistic Regression | 0.712 | 0.34 | 0.31 | 0.184 |
-| Random Forest | 0.748 | 0.41 | 0.37 | 0.171 |
-| XGBoost (tuned) | **0.782** | **0.46** | **0.42** | **0.158** |
-| Stacked Ensemble | 0.779 | 0.45 | 0.41 | 0.159 |
+Credit model performance on the LendingClub test split:
 
-**RAG Evaluation (LLM-as-judge over 100 questions):**
-- Faithfulness: **0.91**
-- Answer Relevance: **0.87**
-- Context Precision: **0.83**
+| Model | ROC-AUC | PR-AUC | Brier |
+|---|---|---|---|
+| Logistic Regression | 0.712 | 0.34 | 0.184 |
+| Random Forest | 0.748 | 0.41 | 0.171 |
+| XGBoost (tuned) | 0.782 | 0.46 | 0.158 |
+| Stacked Ensemble | 0.779 | 0.45 | 0.159 |
 
 ---
 
-## 🧠 Datasets Used
+## Datasets
 
-1. **LendingClub Loan Data** (Kaggle) — Credit risk labels
-2. **SEC EDGAR Filings** — 10-K, 10-Q reports (downloadable via `sec-edgar-downloader`)
-3. **FinanceBench** — Open benchmark for financial QA evaluation
-4. **Synthetic** — Generated applicant profiles for stress-testing
-
----
-
-## 🛠️ Tech Stack
-
-**ML/AI:** XGBoost, scikit-learn, LightGBM, SHAP, Optuna, MLflow
-**LLM/RAG:** LangChain, LlamaIndex, FAISS, ChromaDB, sentence-transformers, OpenAI, Anthropic
-**Backend:** FastAPI, Pydantic, Uvicorn
-**Infra:** Docker, docker-compose, Redis
-**Eval:** RAGAS, DeepEval, pytest
+- **LendingClub Loan Data** (Kaggle) — credit risk labels and applicant features
+- **SEC EDGAR filings** — 10-K, 10-Q reports, downloaded via `sec-edgar-downloader`
+- **Synthetic applicants** — generated for stress-testing the model
 
 ---
 
-## 🎓 What Recruiters Will Notice
+## Possible improvements
 
-✅ You can ship a **real, end-to-end** AI product, not just train a model
-✅ You understand **trade-offs** (when to use traditional ML vs. LLM vs. RAG)
-✅ You can write **production code** with configs, tests, logging, monitoring
-✅ You handle **evaluation rigorously** — both ML metrics and LLM-as-judge
-✅ You think about **explainability, calibration, and safety**
+- Add streaming responses to the agent
+- Cache repeated RAG queries (Redis)
+- Add a small web frontend instead of just the API
+- Periodic re-training pipeline
+- Data drift monitoring (PSI, KS test) in production
 
 ---
 
-## 📜 License
+## License
 
 MIT
-
-## 🙏 Acknowledgments
-
-Inspired by patterns from BloombergGPT, FinGPT, and modern fintech ML platforms.
