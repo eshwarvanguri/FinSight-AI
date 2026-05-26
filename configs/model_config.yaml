@@ -1,0 +1,98 @@
+# Credit Risk Model Configuration
+model:
+  type: ensemble  # options: xgboost, random_forest, logistic, ensemble
+  random_state: 42
+
+  xgboost:
+    n_estimators: 500
+    max_depth: 6
+    learning_rate: 0.05
+    subsample: 0.8
+    colsample_bytree: 0.8
+    scale_pos_weight: 3.0
+    eval_metric: auc
+    early_stopping_rounds: 50
+
+  random_forest:
+    n_estimators: 300
+    max_depth: 12
+    min_samples_split: 20
+    min_samples_leaf: 10
+    class_weight: balanced
+    n_jobs: -1
+
+  logistic:
+    C: 1.0
+    class_weight: balanced
+    max_iter: 1000
+
+data:
+  target_column: loan_status
+  test_size: 0.2
+  val_size: 0.1
+  stratify: true
+  positive_class: Charged Off  # default label
+
+  numeric_features:
+    - loan_amnt
+    - int_rate
+    - installment
+    - annual_inc
+    - dti
+    - delinq_2yrs
+    - revol_util
+    - total_acc
+    - open_acc
+    - inq_last_6mths
+    - mort_acc
+    - pub_rec
+    - pub_rec_bankruptcies
+
+  categorical_features:
+    - grade
+    - sub_grade
+    - home_ownership
+    - verification_status
+    - purpose
+    - addr_state
+    - emp_length
+    - term
+
+  derived_features:
+    - debt_to_income_v2
+    - utilization_bucket
+    - credit_history_length
+    - income_to_loan_ratio
+
+preprocessing:
+  numeric_imputation: median
+  categorical_imputation: most_frequent
+  scaling: standard       # standard, minmax, robust, none
+  encoding: target        # onehot, target, ordinal
+  handle_outliers: clip   # clip, remove, none
+  outlier_quantile: 0.99
+
+imbalance:
+  strategy: smote         # smote, undersample, class_weight, none
+  sampling_strategy: 1.0
+
+calibration:
+  method: isotonic        # isotonic, sigmoid, none
+  cv: 5
+
+evaluation:
+  metrics: [roc_auc, pr_auc, ks_statistic, brier_score, accuracy, f1]
+  cv_folds: 5
+  threshold_search: true
+  business_threshold: 0.35  # tuned for recall
+
+explainability:
+  generate_shap: true
+  shap_sample_size: 1000
+  generate_plots: true
+
+mlflow:
+  experiment_name: credit-risk
+  run_name: null  # auto-generated if null
+  log_artifacts: true
+  log_model: true

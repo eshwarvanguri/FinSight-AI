@@ -1,0 +1,50 @@
+# Agent Configuration
+agent:
+  name: FinSight-Analyst
+  llm_model: llama-3.3-70b-versatile
+  temperature: 0.1
+  max_iterations: 8
+  verbose: true
+
+  system_prompt: |
+    You are FinSight, a senior financial risk analyst AI. You have access to:
+    1. A credit risk scoring model that predicts default probability
+    2. A RAG system over 10-K, 10-Q, and earnings filings
+    3. Financial ratio calculators
+    4. Market data lookup
+
+    Always:
+    - Ground your claims in retrieved evidence (cite filings)
+    - Use the risk model for any default-probability claim
+    - Show your reasoning step-by-step
+    - Refuse to give investment advice; give analysis only
+
+tools:
+  - name: predict_credit_risk
+    enabled: true
+    description: Predict default probability for a borrower
+
+  - name: search_filings
+    enabled: true
+    description: Search SEC filings (10-K, 10-Q) via RAG
+
+  - name: calculate_financial_ratios
+    enabled: true
+    description: Compute key financial ratios (D/E, current ratio, quick ratio, etc.)
+
+  - name: get_market_data
+    enabled: false  # requires external API key
+    description: Fetch live stock/bond data
+
+  - name: generate_report
+    enabled: true
+    description: Generate a structured analyst report
+
+memory:
+  type: buffer            # buffer, summary, vector
+  k: 10                   # last k turns
+
+output:
+  format: markdown        # markdown, json, html
+  include_reasoning: true
+  include_citations: true

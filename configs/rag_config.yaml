@@ -1,0 +1,56 @@
+# RAG Pipeline Configuration
+
+ingestion:
+  input_dir: data/raw/filings/
+  supported_formats: [pdf, txt, html, md]
+  recursive: true
+
+chunking:
+  strategy: recursive   # recursive, semantic, fixed, markdown
+  chunk_size: 512
+  chunk_overlap: 64
+  separators: ["\n\n", "\n", ". ", " ", ""]
+  semantic_threshold: 0.75
+
+embeddings:
+  provider: huggingface   # huggingface, openai, cohere
+  model: BAAI/bge-small-en-v1.5
+  dimension: 384
+  batch_size: 32
+  normalize: true
+  device: cpu             # cpu, cuda, mps
+
+vector_store:
+  type: faiss             # faiss, chroma, qdrant
+  index_path: artifacts/embeddings/finsight_index
+  similarity: cosine      # cosine, l2, dot
+  metadata_fields: [source, page, section, ticker, filing_date]
+
+retrieval:
+  top_k: 10
+  fetch_k: 30             # for MMR
+  use_mmr: true
+  mmr_lambda: 0.7
+  hybrid_search: true     # combine BM25 + dense
+  bm25_weight: 0.3
+  dense_weight: 0.7
+  fusion_method: rrf      # reciprocal rank fusion
+
+reranking:
+  enabled: true
+  model: BAAI/bge-reranker-base
+  top_n: 5
+
+generation:
+  llm_provider: openai    # openai, anthropic, ollama
+  llm_model: gpt-4o-mini
+  temperature: 0.1
+  max_tokens: 1024
+  system_prompt_template: prompts/rag_system.txt
+  cite_sources: true
+  refuse_if_no_context: true
+
+evaluation:
+  metrics: [faithfulness, answer_relevance, context_precision, context_recall]
+  llm_judge: gpt-4o
+  num_eval_samples: 100

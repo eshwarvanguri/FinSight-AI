@@ -1,0 +1,52 @@
+version: "3.9"
+
+services:
+  finsight-api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: finsight-ai:latest
+    container_name: finsight-api
+    ports:
+      - "8000:8000"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - MODEL_PATH=/app/artifacts/models/credit_risk_v1.pkl
+      - INDEX_PATH=/app/artifacts/embeddings/finsight_index
+      - LOG_LEVEL=INFO
+    volumes:
+      - ../artifacts:/app/artifacts:ro
+    depends_on:
+      - redis
+      - mlflow
+    restart: unless-stopped
+
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v2.10.0
+    container_name: finsight-mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow-data:/mlflow
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri sqlite:///mlflow/mlflow.db
+      --default-artifact-root /mlflow/artifacts
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: finsight-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+
+volumes:
+  mlflow-data:
+  redis-data:

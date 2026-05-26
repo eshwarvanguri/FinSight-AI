@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinSight AI — Financial Risk & Insights Platform</title>
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --surface: #111827;
+      --surface2: #1a2235;
+      --border: #1e2d45;
+      --accent: #3b82f6;
+      --accent2: #10b981;
+      --accent3: #f59e0b;
+      --danger: #ef4444;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --heading: #f1f5f9;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; }
+
+    /* Sidebar */
+    .sidebar {
+      width: 240px; min-height: 100vh; background: var(--surface);
+      border-right: 1px solid var(--border); display: flex; flex-direction: column;
+      position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+    }
+    .logo { padding: 24px 20px 20px; border-bottom: 1px solid var(--border); }
+    .logo h1 { font-size: 20px; font-weight: 700; color: var(--heading); }
+    .logo h1 span { color: var(--accent); }
+    .logo p { font-size: 11px; color: var(--muted); margin-top: 4px; letter-spacing: 0.5px; text-transform: uppercase; }
+    .nav { padding: 16px 12px; flex: 1; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      border-radius: 8px; cursor: pointer; color: var(--muted);
+      font-size: 14px; font-weight: 500; margin-bottom: 4px;
+      transition: all 0.15s; border: none; background: none; width: 100%; text-align: left;
+    }
+    .nav-item:hover { background: var(--surface2); color: var(--text); }
+    .nav-item.active { background: rgba(59,130,246,0.15); color: var(--accent); }
+    .nav-item .icon { font-size: 18px; width: 22px; text-align: center; }
+    .status-bar { padding: 16px 20px; border-top: 1px solid var(--border); }
+    .status-bar p { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+    .status-dot { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text); margin-bottom: 6px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+    .dot.green { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+    .dot.red { background: var(--danger); }
+
+    /* Main content */
+    .main { margin-left: 240px; flex: 1; padding: 32px; max-width: 900px; }
+
+    /* Page header */
+    .page-header { margin-bottom: 28px; }
+    .page-header h2 { font-size: 24px; font-weight: 700; color: var(--heading); }
+    .page-header p { color: var(--muted); font-size: 14px; margin-top: 6px; }
+
+    /* Cards */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 12px; padding: 24px; margin-bottom: 20px;
+    }
+    .card-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 16px; }
+
+    /* Forms */
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+    .form-grid.one { grid-template-columns: 1fr; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .field .hint { font-size: 11px; color: var(--muted); opacity: 0.7; }
+    .field input, .field select, .field textarea {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+      padding: 10px 12px; color: var(--text); font-size: 14px; outline: none;
+      transition: border-color 0.15s; font-family: inherit;
+    }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent); }
+    .field textarea { resize: vertical; min-height: 100px; line-height: 1.5; }
+    .field select option { background: var(--surface2); }
+
+    /* Buttons */
+    .btn {
+      padding: 11px 24px; border-radius: 8px; border: none; cursor: pointer;
+      font-size: 14px; font-weight: 600; display: inline-flex; align-items: center;
+      gap: 8px; transition: all 0.15s; font-family: inherit;
+    }
+    .btn-primary { background: var(--accent); color: white; }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Output */
+    .output { display: none; }
+    .output.visible { display: block; }
+    .output-card {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 20px; margin-top: 16px;
+    }
+    .output-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--muted); margin-bottom: 8px; }
+    .output-text { font-size: 14px; line-height: 1.7; color: var(--text); white-space: pre-wrap; }
+
+    /* Risk badge */
+    .risk-result { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+    .metric-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+    .metric-box .value { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+    .metric-box .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+    .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+    .badge.low { background: rgba(16,185,129,0.15); color: var(--accent2); border: 1px solid rgba(16,185,129,0.3); }
+    .badge.medium { background: rgba(245,158,11,0.15); color: var(--accent3); border: 1px solid rgba(245,158,11,0.3); }
+    .badge.high { background: rgba(239,68,68,0.15); color: var(--danger); border: 1px solid rgba(239,68,68,0.3); }
+
+    /* Sources */
+    .source-item {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      padding: 12px 14px; margin-top: 8px;
+    }
+    .source-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .source-file { font-size: 12px; font-weight: 600; color: var(--accent); }
+    .source-score { font-size: 11px; color: var(--muted); margin-left: auto; }
+    .source-snippet { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+    /* Health grid */
+    .health-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .health-card {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 10px;
+      padding: 20px; text-align: center;
+    }
+    .health-card .icon { font-size: 28px; margin-bottom: 8px; }
+    .health-card .name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .health-card .status { font-size: 12px; font-weight: 600; }
+    .health-card.ok .status { color: var(--accent2); }
+    .health-card.fail .status { color: var(--danger); }
+    .health-card.pending .icon { opacity: 0.4; }
+
+    /* Spinner */
+    .spinner {
+      display: none; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite;
+    }
+    .spinner.visible { display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Error */
+    .error-box {
+      display: none; background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3);
+      border-radius: 8px; padding: 12px 14px; margin-top: 12px; color: #fca5a5; font-size: 13px;
+    }
+    .error-box.visible { display: block; }
+
+    /* Section */
+    .section { display: none; }
+    .section.active { display: block; }
+
+    /* Trace */
+    .trace-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-top: 8px; }
+    .trace-tool { font-size: 12px; font-weight: 700; color: var(--accent3); margin-bottom: 4px; }
+    .trace-result { font-size: 11px; color: var(--muted); font-family: monospace; white-space: pre-wrap; overflow-x: auto; max-height: 100px; overflow-y: auto; }
+
+    /* Example pills */
+    .examples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+    .example-pill {
+      background: var(--surface2); border: 1px solid var(--border); border-radius: 20px;
+      padding: 5px 12px; font-size: 12px; color: var(--muted); cursor: pointer;
+      transition: all 0.15s;
+    }
+    .example-pill:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Divider */
+    .divider { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+    /* Actions row */
+    .actions { display: flex; gap: 10px; align-items: center; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar">
+  <div class="logo">
+    <h1>Fin<span>Sight</span> AI</h1>
+    <p>Financial Risk Platform</p>
+  </div>
+  <nav class="nav">
+    <button class="nav-item active" onclick="showSection('health')" id="nav-health">
+      <span class="icon">🏥</span> Health Check
+    </button>
+    <button class="nav-item" onclick="showSection('predict')" id="nav-predict">
+      <span class="icon">📊</span> Credit Risk
+    </button>
+    <button class="nav-item" onclick="showSection('rag')" id="nav-rag">
+      <span class="icon">📄</span> Filing Analysis
+    </button>
+    <button class="nav-item" onclick="showSection('agent')" id="nav-agent">
+      <span class="icon">🤖</span> AI Agent
+    </button>
+  </nav>
+  <div class="status-bar">
+    <p>Services</p>
+    <div class="status-dot"><div class="dot" id="dot-model"></div> Credit Model</div>
+    <div class="status-dot"><div class="dot" id="dot-rag"></div> RAG Index</div>
+    <div class="status-dot"><div class="dot" id="dot-agent"></div> AI Agent</div>
+  </div>
+</aside>
+
+<!-- Main -->
+<main class="main">
+
+  <!-- Health Section -->
+  <div class="section active" id="section-health">
+    <div class="page-header">
+      <h2>🏥 System Health</h2>
+      <p>Check the status of all loaded services and models.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Service Status</div>
+      <div class="health-grid" id="health-grid">
+        <div class="health-card pending" id="hc-model">
+          <div class="icon">🧠</div>
+          <div class="name">Credit Risk Model</div>
+          <div class="status">Checking...</div>
+        </div>
+        <div class="health-card pending" id="hc-rag">
+          <div class="icon">📚</div>
+          <div class="name">RAG Index</div>
+          <div class="status">Checking...</div>
+        </div>
+        <div class="health-card pending" id="hc-agent">
+          <div class="icon">🤖</div>
+          <div class="name">AI Agent</div>
+          <div class="status">Checking...</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn btn-secondary" onclick="checkHealth()">🔄 Refresh Status</button>
+        <div class="spinner" id="health-spinner"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Predict Section -->
+  <div class="section" id="section-predict">
+    <div class="page-header">
+      <h2>📊 Credit Risk Prediction</h2>
+      <p>Enter loan applicant details to get a default probability score and risk assessment.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Loan Details</div>
+      <div class="form-grid">
+        <div class="field">
+          <label>Loan Amount (USD)</label>
+          <input type="number" id="p-loan_amnt" value="15000" min="1000" max="40000" />
+          <span class="hint">$1,000 – $40,000</span>
+        </div>
+        <div class="field">
+          <label>Annual Income (USD)</label>
+          <input type="number" id="p-annual_inc" value="55000" min="10000" />
+          <span class="hint">Gross yearly income</span>
+        </div>
+        <div class="field">
+          <label>Interest Rate (%)</label>
+          <input type="number" id="p-int_rate" value="14.5" step="0.1" min="5" max="30" />
+          <span class="hint">5% – 30%</span>
+        </div>
+        <div class="field">
+          <label>Debt-to-Income Ratio (%)</label>
+          <input type="number" id="p-dti" value="18.5" step="0.1" min="0" max="100" />
+          <span class="hint">Monthly debt / monthly income × 100</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Borrower Profile</div>
+      <div class="form-grid three">
+        <div class="field">
+          <label>Loan Grade</label>
+          <select id="p-grade">
+            <option value="A">A — Excellent</option>
+            <option value="B">B — Good</option>
+            <option value="C" selected>C — Fair</option>
+            <option value="D">D — Poor</option>
+            <option value="E">E — Very Poor</option>
+            <option value="F">F — Bad</option>
+            <option value="G">G — Very Bad</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Home Ownership</label>
+          <select id="p-home_ownership">
+            <option value="RENT" selected>Rent</option>
+            <option value="MORTGAGE">Mortgage</option>
+            <option value="OWN">Own</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Loan Term</label>
+          <select id="p-term">
+            <option value="36 months" selected>36 Months</option>
+            <option value="60 months">60 Months</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Purpose</label>
+          <select id="p-purpose">
+            <option value="debt_consolidation" selected>Debt Consolidation</option>
+            <option value="credit_card">Credit Card</option>
+            <option value="home_improvement">Home Improvement</option>
+            <option value="major_purchase">Major Purchase</option>
+            <option value="small_business">Small Business</option>
+            <option value="car">Car</option>
+            <option value="medical">Medical</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Employment Length</label>
+          <select id="p-emp_length">
+            <option value="< 1 year">Less than 1 year</option>
+            <option value="1 year">1 year</option>
+            <option value="2 years">2 years</option>
+            <option value="3 years">3 years</option>
+            <option value="4 years">4 years</option>
+            <option value="5 years" selected>5 years</option>
+            <option value="6 years">6 years</option>
+            <option value="7 years">7 years</option>
+            <option value="8 years">8 years</option>
+            <option value="9 years">9 years</option>
+            <option value="10+ years">10+ years</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Verification Status</label>
+          <select id="p-verification_status">
+            <option value="Verified" selected>Verified</option>
+            <option value="Source Verified">Source Verified</option>
+            <option value="Not Verified">Not Verified</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Credit History</div>
+      <div class="form-grid three">
+        <div class="field">
+          <label>Revolving Utilization (%)</label>
+          <input type="number" id="p-revol_util" value="45" min="0" max="100" />
+          <span class="hint">Credit used / credit limit</span>
+        </div>
+        <div class="field">
+          <label>Delinquencies (2 yrs)</label>
+          <input type="number" id="p-delinq_2yrs" value="0" min="0" />
+          <span class="hint">Late payments in last 2 years</span>
+        </div>
+        <div class="field">
+          <label>Inquiries (6 months)</label>
+          <input type="number" id="p-inq_last_6mths" value="1" min="0" />
+          <span class="hint">Hard credit inquiries</span>
+        </div>
+        <div class="field">
+          <label>Open Accounts</label>
+          <input type="number" id="p-open_acc" value="8" min="1" />
+        </div>
+        <div class="field">
+          <label>Total Accounts</label>
+          <input type="number" id="p-total_acc" value="20" min="1" />
+        </div>
+        <div class="field">
+          <label>Public Records</label>
+          <input type="number" id="p-pub_rec" value="0" min="0" />
+          <span class="hint">Bankruptcies, liens, etc.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="error-box" id="predict-error"></div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="runPredict()" id="predict-btn">
+        <span>Assess Risk</span>
+        <div class="spinner" id="predict-spinner"></div>
+      </button>
+      <button class="btn btn-secondary" onclick="fillHighRisk()">Load High-Risk Example</button>
+      <button class="btn btn-secondary" onclick="fillLowRisk()">Load Low-Risk Example</button>
+    </div>
+
+    <div class="output" id="predict-output">
+      <div class="risk-result" id="risk-result"></div>
+    </div>
+  </div>
+
+  <!-- RAG Section -->
+  <div class="section" id="section-rag">
+    <div class="page-header">
+      <h2>📄 Filing Analysis (RAG)</h2>
+      <p>Ask questions about financial filings. The AI retrieves relevant sections and answers using Grok.</p>
+    </div>
+
+    <div class="card" style="background: rgba(59,130,246,0.05); border-color: rgba(59,130,246,0.2);">
+      <div class="card-title" style="color: var(--accent)">Available Documents</div>
+      <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <div style="font-size:13px;font-weight:600;color:var(--text)">ACME Corporation</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Annual Report 10-K • FY2024</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;">
+          <div style="font-size:13px;font-weight:600;color:var(--text)">ZENITH Industries</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">Annual Report 10-K • FY2024</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Your Question</div>
+      <div class="field">
+        <textarea id="rag-question" placeholder="e.g. What were ACME's main risk factors in 2024?"></textarea>
+      </div>
+      <div class="examples">
+        <span class="example-pill" onclick="setRagQ(this)">What were ACME's main risk factors?</span>
+        <span class="example-pill" onclick="setRagQ(this)">What was ACME's revenue in 2024?</span>
+        <span class="example-pill" onclick="setRagQ(this)">What is ZENITH's debt situation?</span>
+        <span class="example-pill" onclick="setRagQ(this)">Compare cybersecurity risks across both companies</span>
+        <span class="example-pill" onclick="setRagQ(this)">What is ZENITH's interest coverage ratio?</span>
+      </div>
+      <hr class="divider" />
+      <div style="display:flex; gap:16px; align-items:center;">
+        <div class="field" style="flex:0 0 120px;">
+          <label>Top-K Results</label>
+          <input type="number" id="rag-topk" value="3" min="1" max="10" />
+        </div>
+      </div>
+    </div>
+
+    <div class="error-box" id="rag-error"></div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="runRag()" id="rag-btn">
+        <span>Analyze Filing</span>
+        <div class="spinner" id="rag-spinner"></div>
+      </button>
+    </div>
+
+    <div class="output" id="rag-output">
+      <div class="output-card">
+        <div class="output-label">AI Answer</div>
+        <div class="output-text" id="rag-answer"></div>
+      </div>
+      <div style="margin-top:16px;">
+        <div class="output-label" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:8px;">Source Excerpts Used</div>
+        <div id="rag-sources"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agent Section -->
+  <div class="section" id="section-agent">
+    <div class="page-header">
+      <h2>🤖 AI Financial Agent</h2>
+      <p>Ask complex financial questions. The agent uses multiple tools — credit scoring, filing search, and ratio calculations — to build a full analyst response.</p>
+    </div>
+
+    <div class="card" style="background: rgba(16,185,129,0.05); border-color: rgba(16,185,129,0.2);">
+      <div class="card-title" style="color: var(--accent2)">Agent Tools Available</div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--text);">🎯 Credit Risk Scoring</div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--text);">📄 SEC Filing Search</div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--text);">📐 Financial Ratio Calculator</div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:12px;color:var(--text);">📝 Report Generator</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Your Query</div>
+      <div class="field">
+        <textarea id="agent-query" rows="4" placeholder="Ask anything about financial risk, filings, or analysis..."></textarea>
+      </div>
+      <div class="examples">
+        <span class="example-pill" onclick="setAgentQ(this)">Summarize the financial condition of ZENITH Industries</span>
+        <span class="example-pill" onclick="setAgentQ(this)">What are the biggest risks across all filings?</span>
+        <span class="example-pill" onclick="setAgentQ(this)">Generate a risk report for ACME Corporation</span>
+        <span class="example-pill" onclick="setAgentQ(this)">Compare the financial health of ACME and ZENITH</span>
+      </div>
+    </div>
+
+    <div class="error-box" id="agent-error"></div>
+
+    <div class="actions">
+      <button class="btn btn-primary" onclick="runAgent()" id="agent-btn">
+        <span>Run Agent</span>
+        <div class="spinner" id="agent-spinner"></div>
+      </button>
+      <span id="agent-status" style="font-size:13px;color:var(--muted);"></span>
+    </div>
+
+    <div class="output" id="agent-output">
+      <div class="output-card">
+        <div class="output-label">Agent Response</div>
+        <div class="output-text" id="agent-answer"></div>
+      </div>
+      <div id="agent-trace-section" style="margin-top:16px; display:none;">
+        <div class="output-label" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--muted);margin-bottom:8px;">Tool Calls Trace</div>
+        <div id="agent-trace"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<script>
+  const API = window.location.origin + '/api/v1';
+
+  // Section navigation
+  function showSection(name) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('section-' + name).classList.add('active');
+    document.getElementById('nav-' + name).classList.add('active');
+  }
+
+  // Spinner helpers
+  function setLoading(id, on) {
+    const btn = document.getElementById(id + '-btn');
+    const sp = document.getElementById(id + '-spinner');
+    if (btn) btn.disabled = on;
+    if (sp) sp.classList.toggle('visible', on);
+  }
+
+  function showError(id, msg) {
+    const el = document.getElementById(id + '-error');
+    el.textContent = '⚠️ ' + msg;
+    el.classList.add('visible');
+  }
+
+  function clearError(id) {
+    const el = document.getElementById(id + '-error');
+    el.classList.remove('visible');
+  }
+
+  // Health Check
+  async function checkHealth() {
+    document.getElementById('health-spinner').classList.add('visible');
+    try {
+      const res = await fetch(API + '/health');
+      const data = await res.json();
+      const s = data.services;
+      setHealthCard('hc-model', s.credit_model, 'Credit Risk Model', '🧠');
+      setHealthCard('hc-rag', s.rag, 'RAG Index', '📚');
+      setHealthCard('hc-agent', s.agent, 'AI Agent (Grok)', '🤖');
+      document.getElementById('dot-model').className = 'dot ' + (s.credit_model ? 'green' : 'red');
+      document.getElementById('dot-rag').className = 'dot ' + (s.rag ? 'green' : 'red');
+      document.getElementById('dot-agent').className = 'dot ' + (s.agent ? 'green' : 'red');
+    } catch(e) {
+      ['hc-model','hc-rag','hc-agent'].forEach(id => setHealthCard(id, false, id, '❌'));
+    }
+    document.getElementById('health-spinner').classList.remove('visible');
+  }
+
+  function setHealthCard(id, ok, name, icon) {
+    const el = document.getElementById(id);
+    el.className = 'health-card ' + (ok ? 'ok' : 'fail');
+    el.innerHTML = `<div class="icon">${icon}</div><div class="name">${name}</div><div class="status">${ok ? '✓ Running' : '✗ Not Loaded'}</div>`;
+  }
+
+  // Credit Risk Predict
+  async function runPredict() {
+    clearError('predict');
+    setLoading('predict', true);
+    const body = {
+      loan_amnt: +document.getElementById('p-loan_amnt').value,
+      annual_inc: +document.getElementById('p-annual_inc').value,
+      int_rate: +document.getElementById('p-int_rate').value,
+      dti: +document.getElementById('p-dti').value,
+      grade: document.getElementById('p-grade').value,
+      home_ownership: document.getElementById('p-home_ownership').value,
+      term: document.getElementById('p-term').value,
+      purpose: document.getElementById('p-purpose').value,
+      emp_length: document.getElementById('p-emp_length').value,
+      verification_status: document.getElementById('p-verification_status').value,
+      revol_util: +document.getElementById('p-revol_util').value,
+      delinq_2yrs: +document.getElementById('p-delinq_2yrs').value,
+      inq_last_6mths: +document.getElementById('p-inq_last_6mths').value,
+      open_acc: +document.getElementById('p-open_acc').value,
+      total_acc: +document.getElementById('p-total_acc').value,
+      pub_rec: +document.getElementById('p-pub_rec').value,
+    };
+    try {
+      const res = await fetch(API + '/predict', {
+        method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)
+      });
+      if (!res.ok) { let msg = res.statusText; try { const e = await res.json(); msg = e.detail || msg; } catch {} throw new Error(msg); }
+      const data = await res.json();
+      renderPrediction(data);
+    } catch(e) {
+      showError('predict', e.message);
+    }
+    setLoading('predict', false);
+  }
+
+  function renderPrediction(data) {
+    const pct = (data.probability_of_default * 100).toFixed(1);
+    const tier = data.risk_tier.toLowerCase();
+    const colors = { low: '#10b981', medium: '#f59e0b', high: '#ef4444' };
+    const color = colors[tier] || '#64748b';
+    document.getElementById('risk-result').innerHTML = `
+      <div class="metric-box">
+        <div class="value" style="color:${color}">${pct}%</div>
+        <div class="label">Default Probability</div>
+      </div>
+      <div class="metric-box">
+        <div class="value" style="font-size:20px;padding-top:4px">
+          <span class="badge ${tier}">${data.risk_tier}</span>
+        </div>
+        <div class="label" style="margin-top:8px">Risk Tier</div>
+      </div>
+      <div class="metric-box">
+        <div class="value" style="font-size:16px;padding-top:8px;color:var(--text)">${data.verdict}</div>
+        <div class="label" style="margin-top:4px">Verdict</div>
+      </div>
+    `;
+    document.getElementById('predict-output').classList.add('visible');
+  }
+
+  function fillHighRisk() {
+    document.getElementById('p-loan_amnt').value = 35000;
+    document.getElementById('p-annual_inc').value = 28000;
+    document.getElementById('p-int_rate').value = 26.5;
+    document.getElementById('p-dti').value = 38;
+    document.getElementById('p-grade').value = 'F';
+    document.getElementById('p-home_ownership').value = 'RENT';
+    document.getElementById('p-revol_util').value = 92;
+    document.getElementById('p-delinq_2yrs').value = 3;
+    document.getElementById('p-inq_last_6mths').value = 5;
+    document.getElementById('p-pub_rec').value = 1;
+  }
+
+  function fillLowRisk() {
+    document.getElementById('p-loan_amnt').value = 8000;
+    document.getElementById('p-annual_inc').value = 120000;
+    document.getElementById('p-int_rate').value = 6.5;
+    document.getElementById('p-dti').value = 5;
+    document.getElementById('p-grade').value = 'A';
+    document.getElementById('p-home_ownership').value = 'MORTGAGE';
+    document.getElementById('p-revol_util').value = 12;
+    document.getElementById('p-delinq_2yrs').value = 0;
+    document.getElementById('p-inq_last_6mths').value = 0;
+    document.getElementById('p-pub_rec').value = 0;
+  }
+
+  // RAG Query
+  function setRagQ(el) { document.getElementById('rag-question').value = el.textContent; }
+  function setAgentQ(el) { document.getElementById('agent-query').value = el.textContent; }
+
+  async function runRag() {
+    const q = document.getElementById('rag-question').value.trim();
+    if (!q) { showError('rag', 'Please enter a question.'); return; }
+    clearError('rag');
+    setLoading('rag', true);
+    try {
+      const res = await fetch(API + '/rag/query', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ question: q, top_k: +document.getElementById('rag-topk').value })
+      });
+      if (!res.ok) { let msg = res.statusText; try { const e = await res.json(); msg = e.detail || msg; } catch {} throw new Error(msg); }
+      const data = await res.json();
+      document.getElementById('rag-answer').textContent = data.answer;
+      const srcDiv = document.getElementById('rag-sources');
+      srcDiv.innerHTML = data.sources.map(s => `
+        <div class="source-item">
+          <div class="source-header">
+            <span class="source-file">📄 ${s.source || 'Unknown'}</span>
+            <span class="source-score">Score: ${s.score != null ? s.score.toFixed(3) : 'N/A'}</span>
+          </div>
+          <div class="source-snippet">${s.snippet}</div>
+        </div>
+      `).join('');
+      document.getElementById('rag-output').classList.add('visible');
+    } catch(e) {
+      showError('rag', e.message);
+    }
+    setLoading('rag', false);
+  }
+
+  // Agent Chat
+  async function runAgent() {
+    const q = document.getElementById('agent-query').value.trim();
+    if (!q) { showError('agent', 'Please enter a query.'); return; }
+    clearError('agent');
+    setLoading('agent', true);
+    document.getElementById('agent-status').textContent = 'Agent is thinking...';
+    try {
+      const res = await fetch(API + '/agent/chat', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ query: q })
+      });
+      if (!res.ok) { let msg = res.statusText; try { const e = await res.json(); msg = e.detail || msg; } catch {} throw new Error(msg); }
+      const data = await res.json();
+      document.getElementById('agent-answer').textContent = data.answer;
+      document.getElementById('agent-status').textContent = `Completed in ${data.iterations} iteration${data.iterations !== 1 ? 's' : ''}`;
+      const traceDiv = document.getElementById('agent-trace');
+      const traceSection = document.getElementById('agent-trace-section');
+      if (data.trace && data.trace.length > 0) {
+        traceDiv.innerHTML = data.trace.map(t => `
+          <div class="trace-item">
+            <div class="trace-tool">🔧 ${t.tool}(${JSON.stringify(t.arguments)})</div>
+            <div class="trace-result">${t.result_preview}</div>
+          </div>
+        `).join('');
+        traceSection.style.display = 'block';
+      } else {
+        traceSection.style.display = 'none';
+      }
+      document.getElementById('agent-output').classList.add('visible');
+    } catch(e) {
+      showError('agent', e.message);
+      document.getElementById('agent-status').textContent = '';
+    }
+    setLoading('agent', false);
+  }
+
+  // Auto-check health on load
+  window.addEventListener('load', checkHealth);
+</script>
+</body>
+</html>
